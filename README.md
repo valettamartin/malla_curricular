@@ -16,6 +16,7 @@ This tool helps organize and visualize your academic progress, applying real-wor
 - Prerequisites for taking the exam
 - Status (Not enabled / Enabled / Exam pending / Approved)
 - Description
+- Minimum number of approved subjects required
 
 ### ✔️ Automatic status verification
 The app automatically adjusts each subject’s status according to real academic rules:
@@ -23,6 +24,8 @@ The app automatically adjusts each subject’s status according to real academic
 - If any prerequisite is not approved or exam-pending, the subject must be Not enabled
 - If all prerequisites are approved or exam-pending, the subject automatically becomes Enabled
 - When a subject is edited, the app also recalculates all subjects that depend on it
+- If the student has fewer approved subjects than required, the subject becomes Not enabled
+- When the number of approved subjects changes (because one subject is marked as Approved), dependent subjects are recalculated
 
 ### ✔️ Semester-organized view
 The Home Screen displays the subjects grouped by semester, with colors based on their status:
@@ -38,13 +41,18 @@ The Home Screen displays the subjects grouped by semester, with colors based on 
 - Clean editing screen 
 - Auto-refresh when returning to the home menu 
 
+### ✔️ Global approved-subject counter
+- Automatically updates when a subject is marked as Approved
+- Visible in the Home Screen
+- Used to determine whether a subject can become Enabled
+
 ---
 
 ## Quick Installation (APK included)
 
 To test the app without compiling anything, simply install the file:
 
-### 👉 **`malla-curricular-v1.0.apk`**
+### 👉 **`malla-curricular-v1.1.apk`**
 
 This file is located in the project’s root directory.
 
@@ -101,7 +109,7 @@ build/app/outputs/flutter-apk/app-release.apk
     materia_screen.dart
   main.dart
 /assets
-malla-curricular-v1.0.apk
+malla-curricular-v1.1.apk
 pubspec.yaml
 README.md
 ```
@@ -116,13 +124,21 @@ To maintain a valid curriculum structure:
 - When a subject is deleted, all related correlatives are automatically recalculated
 This prevents inconsistencies and ensures an academically valid structure.
 
+A subject can only be enabled if:
+- All its prerequisites for attending are Approved or Exam pending
+- The student has at least the required number of approved subjects (minApproved)
+Si cualquiera falla:
+```sh
+estado = Not enabled
+```
+
 ---
 
 ## 🧪 How to test the application
 
 ### ✔ Option 1 — Install the APK (recommended)
 
-1. Open the file malla-curricular-v1.0.apk
+1. Open the file malla-curricular-v1.1.apk
 
 2. Install it
 

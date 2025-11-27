@@ -11,6 +11,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   List<Materia> materias = [];
+  int totalAprobadas = 0;
 
   @override
   void initState() {
@@ -18,9 +19,10 @@ class _HomeScreenState extends State<HomeScreen> {
     _cargarMaterias();
   }
 
-  // Cargar materias desde la base
+  // Cargar materias y contador
   Future<void> _cargarMaterias() async {
     final lista = await DatabaseHelper.getMaterias();
+    final aprobadas = await DatabaseHelper.contadorAprobadas();
 
     // Ordenamos por semestre y luego por nombre
     lista.sort((a, b) {
@@ -32,10 +34,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
     setState(() {
       materias = lista;
+      totalAprobadas = aprobadas;
     });
   }
 
-  // Agrupa todas las materias por semestre
+  // Agrupamos las materias por semestre
   Map<int, List<Materia>> _agruparPorSemestre(List<Materia> materias) {
     final mapa = <int, List<Materia>>{};
     for (final m in materias) {
@@ -45,7 +48,7 @@ class _HomeScreenState extends State<HomeScreen> {
     return mapa;
   }
 
-  // Define color según estado
+  // Color según estado
   Color _colorEstado(String estado) {
     switch (estado) {
       case "Aprobada":
@@ -80,84 +83,104 @@ class _HomeScreenState extends State<HomeScreen> {
             )
           : ListView(
               padding: const EdgeInsets.all(16),
-              children: materiasPorSemestre.entries.map((entrada) {
-                final semestre = entrada.key;
-                final lista = entrada.value;
-
-                return Container(
+              children: [
+                // Contador de aprobadas
+                Container(
+                  padding: const EdgeInsets.all(14),
                   margin: const EdgeInsets.only(bottom: 20),
-                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: Colors.grey.shade300),
+                    color: Colors.blue.shade50,
+                    border: Border.all(color: Colors.blue.shade200),
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        "Semestre $semestre",
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
+                  child: Text(
+                    "Materias aprobadas: $totalAprobadas",
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ),
+
+                // Materias por semestre
+                ...materiasPorSemestre.entries.map((entrada) {
+                  final semestre = entrada.key;
+                  final lista = entrada.value;
+
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 20),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade300),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Semestre $semestre",
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                      ),
 
-                      const SizedBox(height: 12),
+                        const SizedBox(height: 12),
 
-                      ...lista.map((m) {
-                        return Container(
-                          margin: const EdgeInsets.only(bottom: 10),
-                          child: InkWell(
-                            onTap: () async {
-                              // ⛔ ANTES: arguments: m
-                              // ✅ AHORA: enviamos solo el ID
-                              await Navigator.pushNamed(
-                                context,
-                                '/materia',
-                                arguments: m.id, 
-                              );
+                        ...lista.map((m) {
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 10),
+                            child: InkWell(
+                              onTap: () async {
+                                await Navigator.pushNamed(
+                                  context,
+                                  '/materia',
+                                  arguments: m.id,
+                                );
 
-                              _cargarMaterias();   // refrescar al volver
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.all(14),
-                              decoration: BoxDecoration(
-                                color: _colorEstado(m.estado),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      m.nombre,
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
+                                _cargarMaterias(); // recarga al volver
+                              },
+                              child: Container(
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: _colorEstado(m.estado),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      child: Text(
+                                        m.nombre,
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.w600,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                  const Icon(Icons.arrow_forward_ios,
-                                      color: Colors.white, size: 18),
-                                ],
+                                    const Icon(Icons.arrow_forward_ios,
+                                        color: Colors.white, size: 18),
+                                  ],
+                                ),
                               ),
                             ),
-                          ),
-                        );
-                      }).toList(),
-                    ],
-                  ),
-                );
-              }).toList(),
+                          );
+                        }).toList(),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ],
             ),
 
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           await Navigator.pushNamed(context, '/add');
-          _cargarMaterias(); // refrescar
+          _cargarMaterias(); // recarga
         },
         child: const Icon(Icons.add),
       ),

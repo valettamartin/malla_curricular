@@ -4,18 +4,17 @@ import '../data/materia.dart';
 
 class DatabaseHelper {
   static const _databaseName = "malla.db";
-  static const _databaseVersion = 1;
+  static const _databaseVersion = 2; // 🔥 SUBIMOS VERSIÓN
 
   static Database? _database;
 
-  // Acceso único a la base de datos
+  // Acceso a la base de datos
   static Future<Database> get database async {
     if (_database != null) return _database!;
     _database = await _initDatabase();
     return _database!;
   }
 
-  // Inicializa la base
   static Future<Database> _initDatabase() async {
     final dbPath = await getDatabasesPath();
     final path = join(dbPath, _databaseName);
@@ -24,10 +23,11 @@ class DatabaseHelper {
       path,
       version: _databaseVersion,
       onCreate: _onCreate,
+      onUpgrade: _onUpgrade,
     );
   }
 
-  // Crea tabla materias
+  // Crear tabla
   static Future _onCreate(Database db, int version) async {
     await db.execute('''
       CREATE TABLE materias (
@@ -37,229 +37,180 @@ class DatabaseHelper {
         previasCursar TEXT,
         previasExamen TEXT,
         estado TEXT NOT NULL,
-        descripcion TEXT
+        descripcion TEXT,
+        minAprobadas INTEGER NOT NULL DEFAULT 0
       )
     ''');
   }
 
-  // ---------------------------------------------------------
-  // INSERTAR MATERIA
-  // ---------------------------------------------------------
+  // Agregamos columna al actualizar BD
+  static Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      await db.execute(
+        "ALTER TABLE materias ADD COLUMN minAprobadas INTEGER NOT NULL DEFAULT 0"
+      );
+    }
+  }
+
+  // Contador de materias aprobadas, global
+  static Future<int> contadorAprobadas() async {
+    final db = await database;
+
+    final res = await db.rawQuery(
+      "SELECT COUNT(*) AS total FROM materias WHERE estado = 'Aprobada'"
+    );
+
+    return Sqflite.firstIntValue(res) ?? 0;
+  }
+
+  // Validar si una materia cumple requisitos
+  static Future<bool> cumpleRequisitos(Materia m) async {
+    final db = await database;
+
+    // Previas para cursar?
+    if (m.previasCursar.isNotEmpty) {
+      final result = await db.query(
+        'materias',
+        where: 'id IN (${m.previasCursar.join(',')}) AND (estado = ? OR estado = ?)',
+        whereArgs: ['Aprobada', 'Examen pendiente'],
+      );
+
+      if (result.length != m.previasCursar.length) {
+        return false;
+      }
+    }
+
+    // Minimo de aprovadas?
+    final aprobadas = await contadorAprobadas();
+    if (aprobadas < m.minAprobadas) return false;
+
+    return true;
+  }
+
+  // Insertar nueva materia
   static Future<void> insertMateria(Materia materia) async {
     final db = await database;
 
-    // 1. Validar que las previas existan
+    // Existen las previas?
     Future<bool> existenPrevias(List<int> ids) async {
       if (ids.isEmpty) return true;
-
-      final result = await db.query(
-        'materias',
-        where: 'id IN (${ids.join(',')})',
-      );
-
-      return result.length == ids.length;
+      final r = await db.query("materias",
+          where: "id IN (${ids.join(',')})");
+      return r.length == ids.length;
     }
 
     if (!await existenPrevias(materia.previasCursar)) {
-      throw Exception("Error: Existen previas para cursar que no están registradas.");
+      throw Exception("Error: previas para cursar inexistentes.");
     }
-
     if (!await existenPrevias(materia.previasExamen)) {
-      throw Exception("Error: Existen previas para examen que no están registradas.");
+      throw Exception("Error: previas para examen inexistentes.");
     }
 
-    // 2. Validar cumplimiento de previas
-    Future<bool> previasCumplidas(List<int> ids) async {
-      if (ids.isEmpty) return true;
+    // Validación completa
+    final cumple = await cumpleRequisitos(materia);
 
-      final result = await db.query(
-        'materias',
-        where: 'id IN (${ids.join(',')}) AND (estado = ? OR estado = ?)',
-        whereArgs: ['Aprobada', 'Examen pendiente'],
-      );
-
-      return result.length == ids.length;
-    }
-
-    final cumplePrevias = await previasCumplidas(materia.previasCursar);
-
-    // 3. Corregir estado automáticamente
-    if (materia.previasCursar.isEmpty || cumplePrevias) {
+    if (!cumple) {
+      materia.estado = "No habilitada";
+    } else {
       if (materia.estado == "No habilitada") {
         materia.estado = "Habilitada";
       }
-    } else {
-      materia.estado = "No habilitada";
     }
 
-    // 4. Guardar
-    await db.insert('materias', materia.toMap(),
-        conflictAlgorithm: ConflictAlgorithm.replace);
+    await db.insert(
+      'materias',
+      materia.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
 
-    // 5. Recalcular dependientes
     await recalcularEstadosDependientes(materia.id!);
   }
 
-  // ---------------------------------------------------------
-  // ACTUALIZAR MATERIA
-  // ---------------------------------------------------------
+  // Actualizar materia
   static Future<void> updateMateria(Materia materia) async {
     final db = await database;
 
-    // 1. Validar existencia de previas
+    // Existen las previas?
     Future<bool> existenPrevias(List<int> ids) async {
       if (ids.isEmpty) return true;
-      final result = await db.query(
-        'materias',
-        where: 'id IN (${ids.join(',')})',
-      );
-      return result.length == ids.length;
+      final r = await db.query("materias",
+          where: "id IN (${ids.join(',')})");
+      return r.length == ids.length;
     }
 
     if (!await existenPrevias(materia.previasCursar)) {
-      throw Exception("Error: Existen previas para cursar que no están registradas.");
+      throw Exception("Error: previas para cursar inexistentes.");
     }
-
     if (!await existenPrevias(materia.previasExamen)) {
-      throw Exception("Error: Existen previas para examen que no están registradas.");
+      throw Exception("Error: previas para examen inexistentes.");
     }
 
-    // 2. Validar cumplimiento de previas
-    Future<bool> previasCumplidas(List<int> ids) async {
-      if (ids.isEmpty) return true;
+    // Validación completa
+    final cumple = await cumpleRequisitos(materia);
 
-      final result = await db.query(
-        'materias',
-        where: 'id IN (${ids.join(',')}) AND (estado = ? OR estado = ?)',
-        whereArgs: ['Aprobada', 'Examen pendiente'],
-      );
-
-      return result.length == ids.length;
-    }
-
-    final cumplePrevias = await previasCumplidas(materia.previasCursar);
-
-    // 3. Corregir estado
-    if (materia.previasCursar.isEmpty || cumplePrevias) {
+    if (!cumple) {
+      materia.estado = "No habilitada";
+    } else {
       if (materia.estado == "No habilitada") {
         materia.estado = "Habilitada";
       }
-    } else {
-      materia.estado = "No habilitada";
     }
 
-    // 4. Guardar cambios
     await db.update(
       'materias',
       materia.toMap(),
-      where: 'id = ?',
+      where: "id = ?",
       whereArgs: [materia.id],
     );
 
-    // 🔥 5. Recargar la versión guardada ANTES de recalcular dependientes
-    final actualizada = await getMateriaById(materia.id!);
-
-    // 6. Recalcular dependientes
     await recalcularEstadosDependientes(materia.id!);
   }
 
-  // ---------------------------------------------------------
-  // RECALCULAR ESTADOS DEPENDIENTES
-  // ---------------------------------------------------------
+  // Recalcular estados de materias dependientes
   static Future<void> recalcularEstadosDependientes(int materiaId) async {
     final db = await database;
 
-    // Obtener todas las materias
-    final resultado = await db.query('materias');
-    final todas = resultado.map((e) => Materia.fromMap(e)).toList();
+    final lista = (await db.query("materias"))
+        .map((e) => Materia.fromMap(e)).toList();
 
-    final mapa = {for (var m in todas) m.id!: m};
+    final mapa = {for (var m in lista) m.id!: m};
 
-    bool huboCambios = true;
+    bool cambios = true;
 
-    while (huboCambios) {
-      huboCambios = false;
+    while (cambios) {
+      cambios = false;
 
-      for (final materia in todas) {
-        final previas = materia.previasCursar;
+      for (final m in lista) {
+        final cumple = await cumpleRequisitos(m);
 
-        // A) Sin previas jamás puede estar No habilitada
-        if (previas.isEmpty) {
-          if (materia.estado == "No habilitada") {
-            materia.estado = "Habilitada";
-
-            await db.update(
-              'materias',
-              materia.toMap(),
-              where: 'id = ?',
-              whereArgs: [materia.id],
-            );
-
-            mapa[materia.id!] = materia;
-            huboCambios = true;
-          }
-          continue;
+        if (!cumple && m.estado != "No habilitada") {
+          m.estado = "No habilitada";
+          await db.update("materias", m.toMap(),
+              where: "id = ?", whereArgs: [m.id]);
+          cambios = true;
         }
 
-        // B) Verificar si cumple previas
-        final cumplePrevias = previas.every((idPrev) {
-          final previa = mapa[idPrev];
-          return previa != null &&
-              (previa.estado == "Aprobada" ||
-                  previa.estado == "Examen pendiente");
-        });
-
-        // C) Si NO cumple previas -> debe quedar No habilitada
-        if (!cumplePrevias && materia.estado != "No habilitada") {
-          materia.estado = "No habilitada";
-
-          await db.update(
-            'materias',
-            materia.toMap(),
-            where: 'id = ?',
-            whereArgs: [materia.id],
-          );
-
-          mapa[materia.id!] = materia;
-          huboCambios = true;
-          continue;
-        }
-
-        // D) Si cumple previas -> solo desbloquear si estaba No habilitada
-        if (cumplePrevias && materia.estado == "No habilitada") {
-          materia.estado = "Habilitada";
-
-          await db.update(
-            'materias',
-            materia.toMap(),
-            where: 'id = ?',
-            whereArgs: [materia.id],
-          );
-
-          mapa[materia.id!] = materia;
-          huboCambios = true;
+        if (cumple && m.estado == "No habilitada") {
+          m.estado = "Habilitada";
+          await db.update("materias", m.toMap(),
+              where: "id = ?", whereArgs: [m.id]);
+          cambios = true;
         }
       }
     }
   }
 
-  // ---------------------------------------------------------
-  // CONSULTAS
-  // ---------------------------------------------------------
+  // Consultar todas las materias
   static Future<List<Materia>> getMaterias() async {
     final db = await database;
-    final res = await db.query('materias');
+    final res = await db.query("materias");
     return res.map((e) => Materia.fromMap(e)).toList();
   }
 
   static Future<Materia?> getMateriaById(int id) async {
     final db = await database;
-    final res = await db.query(
-      'materias',
-      where: 'id = ?',
-      whereArgs: [id],
-      limit: 1,
-    );
+    final res = await db.query("materias",
+        where: "id = ?", whereArgs: [id], limit: 1);
     if (res.isEmpty) return null;
     return Materia.fromMap(res.first);
   }
@@ -267,11 +218,7 @@ class DatabaseHelper {
   static Future<void> deleteMateria(int id) async {
     final db = await database;
 
-    await db.delete(
-      'materias',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
+    await db.delete("materias", where: "id = ?", whereArgs: [id]);
 
     await recalcularEstadosDependientes(id);
   }

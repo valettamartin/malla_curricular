@@ -16,6 +16,7 @@ class _MateriaScreenState extends State<MateriaScreen> {
 
   final TextEditingController _descripcionController = TextEditingController();
   final TextEditingController _nombreController = TextEditingController();
+  final TextEditingController _minAprobadasController = TextEditingController();
 
   int _semestreSeleccionado = 1;
   String _estadoSeleccionado = "Habilitada";
@@ -28,7 +29,7 @@ class _MateriaScreenState extends State<MateriaScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
 
-    if (_cargado) return;        // 👈 EVITA QUE SE EJECUTE 2 VECES
+    if (_cargado) return;
     _cargado = true;
 
     final int id = ModalRoute.of(context)!.settings.arguments as int;
@@ -45,6 +46,7 @@ class _MateriaScreenState extends State<MateriaScreen> {
 
       _nombreController.text = m!.nombre;
       _descripcionController.text = m.descripcion;
+      _minAprobadasController.text = m.minAprobadas.toString();
 
       _semestreSeleccionado = m.semestre;
       _estadoSeleccionado = m.estado;
@@ -54,8 +56,21 @@ class _MateriaScreenState extends State<MateriaScreen> {
     });
   }
 
-  /// Reglas de estado automático
-  void _recalcularEstado() {
+  /// Reglas de estado
+  Future<void> _recalcularEstado() async {
+    if (materia == null) return;
+
+    final minAprobadas = int.tryParse(_minAprobadasController.text) ?? 0;
+    final totalAprobadas = await DatabaseHelper.contadorAprobadas();
+
+    // Min aprobadas
+    if (totalAprobadas < minAprobadas) {
+      _estadoSeleccionado = "No habilitada";
+      setState(() {});
+      return;
+    }
+
+    // Previas
     if (previasCursar.isEmpty) {
       if (_estadoSeleccionado == "No habilitada") {
         _estadoSeleccionado = "Habilitada";
@@ -68,13 +83,14 @@ class _MateriaScreenState extends State<MateriaScreen> {
       final previa = todas.firstWhere(
         (m) => m.id == idPrev,
         orElse: () => Materia(
-          id: -1,
+          id: 0,
           nombre: "INVALIDA",
           semestre: 0,
           previasCursar: [],
           previasExamen: [],
           estado: "No habilitada",
           descripcion: "",
+          minAprobadas: 0,
         ),
       );
       return previa.estado == "Aprobada" || previa.estado == "Examen pendiente";
@@ -102,12 +118,57 @@ class _MateriaScreenState extends State<MateriaScreen> {
       previasExamen: previasExamen,
       estado: _estadoSeleccionado,
       descripcion: _descripcionController.text.trim(),
+      minAprobadas: int.tryParse(_minAprobadasController.text) ?? 0,
     );
 
     await DatabaseHelper.updateMateria(actualizado);
 
     if (!mounted) return;
     Navigator.pop(context);
+  }
+
+  Widget _selectorPrevias({
+    required String titulo,
+    required List<int> lista,
+    required Function(List<int>) onChanged,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 15),
+        Text(
+          titulo,
+          style: const TextStyle(fontSize: 17, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.grey.shade300),
+          ),
+          child: Column(
+            children: todas.map((m) {
+              final check = lista.contains(m.id);
+              return CheckboxListTile(
+                title: Text("${m.nombre} (ID ${m.id})"),
+                value: check,
+                onChanged: (v) {
+                  final nueva = [...lista];
+                  if (v == true) {
+                    nueva.add(m.id!);
+                  } else {
+                    nueva.remove(m.id);
+                  }
+                  onChanged(nueva);
+                  _recalcularEstado();
+                },
+              );
+            }).toList(),
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -149,7 +210,7 @@ class _MateriaScreenState extends State<MateriaScreen> {
             const SizedBox(height: 20),
 
             DropdownButtonFormField<int>(
-              value: _semestreSeleccionado,
+              initialValue: _semestreSeleccionado,
               decoration: const InputDecoration(
                 labelText: "Semestre",
                 border: OutlineInputBorder(),
@@ -161,14 +222,24 @@ class _MateriaScreenState extends State<MateriaScreen> {
                   child: Text("Semestre ${i + 1}"),
                 ),
               ),
-              onChanged: (v) {
-                setState(() => _semestreSeleccionado = v!);
-              },
+              onChanged: (v) => setState(() => _semestreSeleccionado = v!),
+            ),
+            const SizedBox(height: 20),
+
+            // minAprobadas
+            TextFormField(
+              controller: _minAprobadasController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: "Mínimo de materias aprobadas requeridas",
+                border: OutlineInputBorder(),
+              ),
+              onChanged: (_) => _recalcularEstado(),
             ),
             const SizedBox(height: 20),
 
             DropdownButtonFormField<String>(
-              value: _estadoSeleccionado,
+              initialValue: _estadoSeleccionado,
               decoration: const InputDecoration(
                 labelText: "Estado",
                 border: OutlineInputBorder(),
@@ -183,6 +254,20 @@ class _MateriaScreenState extends State<MateriaScreen> {
                 _estadoSeleccionado = v!;
                 _recalcularEstado();
               },
+            ),
+
+            // Previas cursar
+            _selectorPrevias(
+              titulo: "Previas para cursar",
+              lista: previasCursar,
+              onChanged: (v) => setState(() => previasCursar = v),
+            ),
+
+            // Previas examen
+            _selectorPrevias(
+              titulo: "Previas para examen",
+              lista: previasExamen,
+              onChanged: (v) => setState(() => previasExamen = v),
             ),
 
             const SizedBox(height: 20),

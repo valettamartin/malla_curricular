@@ -16,18 +16,16 @@ class _AddMateriaScreenState extends State<AddMateriaScreen> {
   final TextEditingController _idController = TextEditingController();
   final TextEditingController _nombreController = TextEditingController();
   final TextEditingController _descripcionController = TextEditingController();
+  final TextEditingController _minAprobadasController = TextEditingController(text: "0");
 
   int _semestreSeleccionado = 1;
 
   String _estadoSeleccionado = "Habilitada";
 
-  // Previas seleccionadas
   List<int> _previasCursar = [];
   List<int> _previasExamen = [];
 
-  // Lista de materias ya creadas (para seleccionar previas)
   List<Materia> todasLasMaterias = [];
-
   bool cargando = true;
 
   @override
@@ -44,9 +42,19 @@ class _AddMateriaScreenState extends State<AddMateriaScreen> {
     });
   }
 
-  // Ajusta el estado automáticamente según previas
-  void _recalcularEstado() {
-    // Sin previas: estado nunca puede ser No habilitada
+  /// Revisar minAprobadas + previas
+  Future<void> _recalcularEstado() async {
+    final minAprobadas = int.tryParse(_minAprobadasController.text) ?? 0;
+    final totalAprobadas = await DatabaseHelper.contadorAprobadas();
+
+    // Comprobamos minimo de aprobadas
+    if (totalAprobadas < minAprobadas) {
+      _estadoSeleccionado = "No habilitada";
+      setState(() {});
+      return;
+    }
+
+    // Comprobamos previas
     if (_previasCursar.isEmpty) {
       if (_estadoSeleccionado == "No habilitada") {
         _estadoSeleccionado = "Habilitada";
@@ -68,6 +76,7 @@ class _AddMateriaScreenState extends State<AddMateriaScreen> {
           previasExamen: [],
           estado: "No habilitada",
           descripcion: "",
+          minAprobadas: 0,
         ),
       );
 
@@ -144,7 +153,7 @@ class _AddMateriaScreenState extends State<AddMateriaScreen> {
                         labelText: "Semestre",
                         border: OutlineInputBorder(),
                       ),
-                      value: _semestreSeleccionado,
+                      initialValue: _semestreSeleccionado,
                       items: List.generate(
                         12,
                         (i) => DropdownMenuItem(
@@ -160,28 +169,46 @@ class _AddMateriaScreenState extends State<AddMateriaScreen> {
                     ),
                     const SizedBox(height: 20),
 
+                    // minAprobadas
+                    TextFormField(
+                      controller: _minAprobadasController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: "Mínimo de materias aprobadas requeridas",
+                        border: OutlineInputBorder(),
+                      ),
+                      onChanged: (_) => _recalcularEstado(),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) return "Ingrese un valor";
+                        final n = int.tryParse(value);
+                        if (n == null || n < 0) return "Debe ser un número ≥ 0";
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 20),
+
                     // Estado
                     DropdownButtonFormField<String>(
                       decoration: const InputDecoration(
                         border: OutlineInputBorder(),
                         labelText: "Estado inicial",
                       ),
-                      value: _estadoSeleccionado,
+                      initialValue: _estadoSeleccionado,
                       items: const [
                         DropdownMenuItem(value: "No habilitada", child: Text("No habilitada")),
                         DropdownMenuItem(value: "Habilitada", child: Text("Habilitada")),
                         DropdownMenuItem(value: "Examen pendiente", child: Text("Examen pendiente")),
                         DropdownMenuItem(value: "Aprobada", child: Text("Aprobada")),
                       ],
-                      onChanged: (value) {
+                      onChanged: (value) async {
                         _estadoSeleccionado = value!;
-                        _recalcularEstado();
+                        await _recalcularEstado();
                       },
                     ),
 
                     const SizedBox(height: 24),
 
-                    // PREVIAS CURSAR
+                    // Previas cursar
                     _selectorPrevias(
                       titulo: "Previas para cursar",
                       seleccionados: _previasCursar,
@@ -193,7 +220,7 @@ class _AddMateriaScreenState extends State<AddMateriaScreen> {
 
                     const SizedBox(height: 24),
 
-                    // PREVIAS EXAMEN
+                    // Previas examen
                     _selectorPrevias(
                       titulo: "Previas para examen",
                       seleccionados: _previasExamen,
@@ -281,6 +308,7 @@ class _AddMateriaScreenState extends State<AddMateriaScreen> {
       previasExamen: _previasExamen,
       estado: _estadoSeleccionado,
       descripcion: _descripcionController.text.trim(),
+      minAprobadas: int.parse(_minAprobadasController.text), // 🔥 NUEVO
     );
 
     try {

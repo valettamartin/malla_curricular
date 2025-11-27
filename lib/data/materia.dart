@@ -7,6 +7,9 @@ class Materia {
   String estado;
   String descripcion;
 
+  /// cantidad mínima de materias aprobadas requeridas
+  int minAprobadas;
+
   Materia({
     this.id,
     required this.nombre,
@@ -15,6 +18,7 @@ class Materia {
     required this.previasExamen,
     required this.estado,
     required this.descripcion,
+    this.minAprobadas = 0, // valor por defecto
   });
 
   // Convertimos de Objeto a SQLite
@@ -27,6 +31,7 @@ class Materia {
       'previasExamen': previasExamen.join(','),
       'estado': estado,
       'descripcion': descripcion,
+      'minAprobadas': minAprobadas,
     };
   }
 
@@ -50,6 +55,7 @@ class Materia {
       previasExamen: parseLista(map['previasExamen']),
       estado: map['estado'],
       descripcion: map['descripcion'],
+      minAprobadas: map['minAprobadas'] ?? 0,
     );
   }
 }
