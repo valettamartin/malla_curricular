@@ -4,7 +4,7 @@ import '../data/materia.dart';
 
 class DatabaseHelper {
   static const _databaseName = "malla.db";
-  static const _databaseVersion = 2; // 🔥 SUBIMOS VERSIÓN
+  static const _databaseVersion = 2;
 
   static Database? _database;
 
