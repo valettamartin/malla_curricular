@@ -65,20 +65,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Color dinámico del progreso
   Color _colorProgreso(double p) {
-    if (p < 0.33) {
-      return Colors.redAccent;
-    } else if (p < 0.66) {
-      return Colors.amberAccent.shade700;
-    } else {
-      return Colors.greenAccent.shade700;
-    }
+    if (p < 0.33) return Colors.redAccent;
+    if (p < 0.66) return Colors.amberAccent.shade700;
+    return Colors.greenAccent.shade700;
   }
 
   @override
   Widget build(BuildContext context) {
     final materiasPorSemestre = _agruparPorSemestre(materias);
 
-    // Cálculo del progreso
     final totalMaterias = materias.length;
     final double progreso =
         totalMaterias == 0 ? 0 : totalAprobadas / totalMaterias;
@@ -133,13 +128,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
                       const SizedBox(height: 12),
 
-                      // Barra de progreso con color dinámico
                       LinearProgressIndicator(
                         value: progreso,
                         minHeight: 12,
                         borderRadius: BorderRadius.circular(8),
-                        backgroundColor:
-                            Theme.of(context).colorScheme.surfaceContainerHighest,
+                        backgroundColor: Theme.of(context)
+                            .colorScheme
+                            .surfaceContainerHighest,
                         valueColor: AlwaysStoppedAnimation(
                           _colorProgreso(progreso),
                         ),
@@ -147,7 +142,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                       const SizedBox(height: 8),
 
-                      // Texto del porcentaje con color dinámico
                       Text(
                         "Avance total: ${(progreso * 100).toStringAsFixed(1)}% "
                         "($totalAprobadas / $totalMaterias)",
@@ -169,7 +163,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     margin: const EdgeInsets.only(bottom: 20),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
@@ -273,9 +268,7 @@ class _HomeScreenState extends State<HomeScreen> {
             title: const Text("Modo oscuro"),
             value: isDark,
             secondary: const Icon(Icons.dark_mode),
-            onChanged: (v) {
-              ThemeController.toggleTheme(v);
-            },
+            onChanged: (v) => ThemeController.toggleTheme(v),
           ),
 
           ListTile(
@@ -284,6 +277,16 @@ class _HomeScreenState extends State<HomeScreen> {
             onTap: () {
               Navigator.pop(context);
               Navigator.pushNamed(context, '/info');
+            },
+          ),
+
+          // Backup
+          ListTile(
+            leading: const Icon(Icons.backup_outlined),
+            title: const Text("Copia de seguridad"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/backup');
             },
           ),
 

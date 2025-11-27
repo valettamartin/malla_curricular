@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "84979867190",
+    "project_id": "malla-curricular-23225",
+    "storage_bucket": "malla-curricular-23225.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:84979867190:android:ecd0193493a03466430297",
+        "android_client_info": {
+          "package_name": "com.example.malla_curricular"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "84979867190-63pemr2tco6m9dmbu0f44138e7d0aonj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.malla_curricular",
+            "certificate_hash": "42e96ffe802e1223e5a2c3399c1e91565f210eef"
+          }
+        },
+        {
+          "client_id": "84979867190-g8u1aqbo5lvip5iq26eqms9a0ti0sh3v.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCuRZ7iitsjdGgeidHyY6y8ejzESBOQ9V0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "84979867190-g8u1aqbo5lvip5iq26eqms9a0ti0sh3v.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

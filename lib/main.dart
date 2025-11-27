@@ -3,6 +3,7 @@ import 'screens/home_screen.dart';
 import 'screens/add_materia_screen.dart';
 import 'screens/materia_screen.dart';
 import 'screens/info_screen.dart';
+import 'screens/backup_screen.dart';
 import 'theme_controller.dart';
 
 void main() async {
@@ -42,14 +43,15 @@ class MallaCurricularApp extends StatelessWidget {
             brightness: Brightness.dark,
           ),
 
-          // Home
+          // Pantalla inicial
           home: const HomeScreen(),
 
-          // Rutas
+          // Rutas nombradas
           routes: {
             '/add': (context) => const AddMateriaScreen(),
             '/materia': (context) => const MateriaScreen(),
             '/info': (context) => const InfoScreen(),
+            '/backup': (context) => const BackupScreen(),
           },
         );
       },
