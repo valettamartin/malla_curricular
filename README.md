@@ -1,59 +1,58 @@
 # 📘 Malla Curricular
 
-Aplicación móvil desarrollada en **Flutter** que permite gestionar una malla curricular universitaria.  
-Incluye creación, edición, visualización y actualización automática del estado de cada materia según sus previas.
+Mobile application developed in Flutter that allows you to manage a university curriculum map.
+It includes creating, editing, viewing, and automatically updating each subject’s status based on its prerequisites.
 
-Esta herramienta facilita organizar y visualizar el avance académico de una carrera, aplicando reglas reales sobre correlatividades y habilitaciones.
-
----
-
-## 📱 Características principales
-
-### ✔️ Gestión completa de materias
-- Nombre  
-- Semestre  
-- Previas para cursar  
-- Previas para examen  
-- Estado (No habilitada / Habilitada / Examen pendiente / Aprobada)  
-- Descripción
-
-### ✔️ Verificación automática del estado
-La app ajusta el estado de cada materia según reglas académicas reales:
-
-- Si **no tiene previas**, nunca puede estar *No habilitada*  
-- Si **alguna previa no está aprobada o pendiente de examen**, debe estar *No habilitada*  
-- Si **todas sus previas están aprobadas o con examen pendiente**, pasa automáticamente a *Habilitada*  
-- Cuando se edita una materia, la app también recalcula las materias que dependen de ella
-
-### ✔️ Vista organizada por semestres
-El Home Screen muestra las materias agrupadas por semestre con colores según su estado:
-
-- 🟩 **Aprobada**  
-- 🟧 **Examen pendiente**  
-- 🟦 **Habilitada**  
-- 🟥 **No habilitada**
-
-### ✔️ Interfaz intuitiva
-- Botón flotante para agregar materias  
-- Selector de previas mostrando **nombre + ID**  
-- Pantalla de edición clara  
-- Actualización automática al volver al menú principal  
+This tool helps organize and visualize your academic progress, applying real-world rules about course correlatives and enrollment eligibility.
 
 ---
 
-## 📦 Instalación rápida (APK incluido)
+## 📱 Key Features
 
-Para probar la app sin compilar nada, simplemente instalá el archivo:
+### ✔️ Full subject management
+- Name
+- Semester
+- Prerequisites for attending
+- Prerequisites for taking the exam
+- Status (Not enabled / Enabled / Exam pending / Approved)
+- Description
+
+### ✔️ Automatic status verification
+The app automatically adjusts each subject’s status according to real academic rules:
+- If it has no prerequisites, it can never be Not enabled
+- If any prerequisite is not approved or exam-pending, the subject must be Not enabled
+- If all prerequisites are approved or exam-pending, the subject automatically becomes Enabled
+- When a subject is edited, the app also recalculates all subjects that depend on it
+
+### ✔️ Semester-organized view
+The Home Screen displays the subjects grouped by semester, with colors based on their status:
+
+- 🟩 **Approved**  
+- 🟧 **Exam pending**  
+- 🟦 **Enabled**  
+- 🟥 **Not enabled**
+
+### ✔️ Intuitive interface
+- Floating button to add subjects
+- Prerequisite selector showing name + ID
+- Clean editing screen 
+- Auto-refresh when returning to the home menu 
+
+---
+
+## Quick Installation (APK included)
+
+To test the app without compiling anything, simply install the file:
 
 ### 👉 **`malla-curricular-v1.0.apk`**
 
-Este archivo se encuentra en el **directorio raíz del proyecto**.
+This file is located in the project’s root directory.
 
-Solo transferilo a tu teléfono Android e instalalo (activá *instalación desde fuentes desconocidas* si es necesario).
+Just transfer it to your Android phone and install it (you may need to enable installation from unknown sources).
 
 ---
 
-## 🔧 Requisitos de desarrollo
+## 🔧 Development Requirements
 
 - Flutter SDK 3.10+  
 - Dart SDK  
@@ -62,7 +61,7 @@ Solo transferilo a tu teléfono Android e instalalo (activá *instalación desde
 
 ---
 
-## 🛠️ Ejecutar el proyecto en modo desarrollo
+## 🛠️ Run the project in development mode
 
 ```sh
 flutter pub get
@@ -71,26 +70,26 @@ flutter run
 
 ---
 
-## 🏗️ Compilar APK
+## 🏗️ Build APK
 
-### APK de debug:
+### Debug APK:
 ```sh
 flutter build apk --debug
 ```
 
-### APK de release:
+### Release APK:
 ```sh
 flutter build apk --release
 ```
 
-El archivo final se generará en:
+The final file will be located at:
 ```sh
 build/app/outputs/flutter-apk/app-release.apk
 ```
 
 ---
 
-## 📁 Estructura del proyecto
+## 📁 Project Structure
 ```sh
 /lib
   /data
@@ -109,31 +108,31 @@ README.md
 
 ---
 
-## 🎓 Lógica del sistema de habilitación
-Para mantener una malla curricular siempre válida:
-- Una materia sin previas siempre está habilitada
-- Una materia con previas solo se habilita si todas están aprobadas o con examen pendiente
-- Al modificar una materia, se recalculan todas las que dependen de ella
-- Al eliminar una materia, las correlativas se recalculan automáticamente
-Esto evita inconsistencias y asegura una estructura académica correcta.
+## 🎓 System Logic for Subject Eligibility
+To maintain a valid curriculum structure:
+- A subject with no prerequisites is always enabled
+- A subject with prerequisites is enabled only if all are approved or exam-pending
+- When a subject is modified, all subjects depending on it are recalculated
+- When a subject is deleted, all related correlatives are automatically recalculated
+This prevents inconsistencies and ensures an academically valid structure.
 
 ---
 
-## 🧪 Cómo probar la aplicación
+## 🧪 How to test the application
 
-### ✔ Opción 1 — Instalar el APK (recomendado)
+### ✔ Option 1 — Install the APK (recommended)
 
-1. Abrir el archivo malla-curricular-v1.0.apk
+1. Open the file malla-curricular-v1.0.apk
 
-2. Instalar
+2. Install it
 
-3. Probar la app agregando, modificando o eliminando materias
+3. Test the app by adding, editing, or deleting subjects
 
-### ✔ Opción 2 — Ejecutar desde Flutter
+### ✔ Option 2 — Run from Flutter
 ```sh
 flutter run
 ```
 
 ---
 
-## 📄 Licencia MIT
+## 📄 MIT License
