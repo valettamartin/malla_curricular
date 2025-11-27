@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
 import 'screens/add_materia_screen.dart';
 import 'screens/materia_screen.dart';
+import 'screens/info_screen.dart';
+import 'theme_controller.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-
   runApp(const MallaCurricularApp());
 }
 
@@ -14,21 +15,39 @@ class MallaCurricularApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: "Malla Curricular",
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        colorSchemeSeed: Colors.blue,
-      ),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: ThemeController.themeMode,
+      builder: (context, modo, _) {
+        return MaterialApp(
+          title: "Malla Curricular",
+          debugShowCheckedModeBanner: false,
 
-      // Pantalla inicial
-      home: const HomeScreen(),
+          themeMode: modo,
 
-      // Rutas nombradas
-      routes: {
-        '/add': (context) => const AddMateriaScreen(),
-        '/materia': (context) => const MateriaScreen(),
+          // Tema Claro
+          theme: ThemeData(
+            useMaterial3: true,
+            colorSchemeSeed: Colors.blue,
+            brightness: Brightness.light,
+          ),
+
+          // Tema Oscuro
+          darkTheme: ThemeData(
+            useMaterial3: true,
+            colorSchemeSeed: Colors.blue,
+            brightness: Brightness.dark,
+          ),
+
+          // Home
+          home: const HomeScreen(),
+
+          // Rutas
+          routes: {
+            '/add': (context) => const AddMateriaScreen(),
+            '/materia': (context) => const MateriaScreen(),
+            '/info': (context) => const InfoScreen(),
+          },
+        );
       },
     );
   }

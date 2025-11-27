@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../data/materia.dart';
 import '../data/db.dart';
+import '../theme_controller.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,7 +25,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final lista = await DatabaseHelper.getMaterias();
     final aprobadas = await DatabaseHelper.contadorAprobadas();
 
-    // Ordenamos por semestre y luego por nombre
     lista.sort((a, b) {
       if (a.semestre != b.semestre) {
         return a.semestre.compareTo(b.semestre);
@@ -38,7 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
   }
 
-  // Agrupamos las materias por semestre
+  // Agrupar por semestre
   Map<int, List<Materia>> _agruparPorSemestre(List<Materia> materias) {
     final mapa = <int, List<Materia>>{};
     for (final m in materias) {
@@ -68,9 +68,19 @@ class _HomeScreenState extends State<HomeScreen> {
     final materiasPorSemestre = _agruparPorSemestre(materias);
 
     return Scaffold(
+      drawer: _buildDrawer(context),
+
       appBar: AppBar(
         title: const Text("Malla Curricular"),
         centerTitle: true,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: () {
+              Scaffold.of(context).openDrawer();
+            },
+          ),
+        ),
       ),
 
       body: materias.isEmpty
@@ -90,20 +100,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
-                    color: Colors.blue.shade50,
-                    border: Border.all(color: Colors.blue.shade200),
+                    color: Theme.of(context).colorScheme.primaryContainer,
                   ),
                   child: Text(
                     "Materias aprobadas: $totalAprobadas",
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: Colors.black87,
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
                     ),
                   ),
                 ),
 
-                // Materias por semestre
+                // Materias agrupadas por semestre
                 ...materiasPorSemestre.entries.map((entrada) {
                   final semestre = entrada.key;
                   final lista = entrada.value;
@@ -112,9 +121,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     margin: const EdgeInsets.only(bottom: 20),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
+                      color: Theme.of(context).colorScheme.surfaceVariant,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey.shade300),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -139,8 +147,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   '/materia',
                                   arguments: m.id,
                                 );
-
-                                _cargarMaterias(); // recarga al volver
+                                _cargarMaterias();
                               },
                               child: Container(
                                 padding: const EdgeInsets.all(14),
@@ -162,8 +169,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                         ),
                                       ),
                                     ),
-                                    const Icon(Icons.arrow_forward_ios,
-                                        color: Colors.white, size: 18),
+                                    const Icon(
+                                      Icons.arrow_forward_ios,
+                                      color: Colors.white,
+                                      size: 18,
+                                    ),
                                   ],
                                 ),
                               ),
@@ -180,9 +190,67 @@ class _HomeScreenState extends State<HomeScreen> {
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           await Navigator.pushNamed(context, '/add');
-          _cargarMaterias(); // recarga
+          _cargarMaterias();
         },
         child: const Icon(Icons.add),
+      ),
+    );
+  }
+
+  // Contenedor lateral
+  Widget _buildDrawer(BuildContext context) {
+    final isDark = ThemeController.themeMode.value == ThemeMode.dark;
+
+    return Drawer(
+      child: Column(
+        children: [
+          DrawerHeader(
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer,
+            ),
+            child: Align(
+              alignment: Alignment.bottomLeft,
+              child: Text(
+                "Opciones",
+                style: TextStyle(
+                  fontSize: 24,
+                  color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+
+          // Modo oscuro
+          SwitchListTile(
+            title: const Text("Modo oscuro"),
+            value: isDark,
+            secondary: const Icon(Icons.dark_mode),
+            onChanged: (v) {
+              ThemeController.toggleTheme(v);
+            },
+          ),
+
+          // Información
+          ListTile(
+            leading: const Icon(Icons.info_outline),
+            title: const Text("Información de la app"),
+            onTap: () {
+              Navigator.pop(context);
+              Navigator.pushNamed(context, '/info');
+            },
+          ),
+
+          const Spacer(),
+
+          const Padding(
+            padding: EdgeInsets.only(bottom: 16),
+            child: Text(
+              "Malla Curricular v1.0",
+              style: TextStyle(color: Colors.grey),
+            ),
+          ),
+        ],
       ),
     );
   }
