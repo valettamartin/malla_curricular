@@ -5,8 +5,12 @@ import 'screens/materia_screen.dart';
 import 'screens/info_screen.dart';
 import 'theme_controller.dart';
 
-void main() {
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Cargar el tema guardado antes de iniciar la app
+  await ThemeController.loadTheme();
+
   runApp(const MallaCurricularApp());
 }
 
