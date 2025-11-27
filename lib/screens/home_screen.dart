@@ -63,9 +63,25 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // Color dinámico del progreso
+  Color _colorProgreso(double p) {
+    if (p < 0.33) {
+      return Colors.redAccent;
+    } else if (p < 0.66) {
+      return Colors.amberAccent.shade700;
+    } else {
+      return Colors.greenAccent.shade700;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final materiasPorSemestre = _agruparPorSemestre(materias);
+
+    // Cálculo del progreso
+    final totalMaterias = materias.length;
+    final double progreso =
+        totalMaterias == 0 ? 0 : totalAprobadas / totalMaterias;
 
     return Scaffold(
       drawer: _buildDrawer(context),
@@ -94,21 +110,53 @@ class _HomeScreenState extends State<HomeScreen> {
           : ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                // Contador de aprobadas
+                // Contador + barra de progreso
                 Container(
-                  padding: const EdgeInsets.all(14),
+                  padding: const EdgeInsets.all(16),
                   margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(12),
                     color: Theme.of(context).colorScheme.primaryContainer,
                   ),
-                  child: Text(
-                    "Materias aprobadas: $totalAprobadas",
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onPrimaryContainer,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Materias aprobadas: $totalAprobadas",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color:
+                              Theme.of(context).colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // Barra de progreso con color dinámico
+                      LinearProgressIndicator(
+                        value: progreso,
+                        minHeight: 12,
+                        borderRadius: BorderRadius.circular(8),
+                        backgroundColor:
+                            Theme.of(context).colorScheme.surfaceContainerHighest,
+                        valueColor: AlwaysStoppedAnimation(
+                          _colorProgreso(progreso),
+                        ),
+                      ),
+
+                      const SizedBox(height: 8),
+
+                      // Texto del porcentaje con color dinámico
+                      Text(
+                        "Avance total: ${(progreso * 100).toStringAsFixed(1)}% "
+                        "($totalAprobadas / $totalMaterias)",
+                        style: TextStyle(
+                          fontWeight: FontWeight.w600,
+                          color: _colorProgreso(progreso),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
 
@@ -121,7 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     margin: const EdgeInsets.only(bottom: 20),
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.surfaceVariant,
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Column(
@@ -197,7 +245,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  // Contenedor lateral
+  // Drawer lateral
   Widget _buildDrawer(BuildContext context) {
     final isDark = ThemeController.themeMode.value == ThemeMode.dark;
 
@@ -221,7 +269,6 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
 
-          // Modo oscuro
           SwitchListTile(
             title: const Text("Modo oscuro"),
             value: isDark,
@@ -231,7 +278,6 @@ class _HomeScreenState extends State<HomeScreen> {
             },
           ),
 
-          // Información
           ListTile(
             leading: const Icon(Icons.info_outline),
             title: const Text("Información de la app"),
@@ -246,7 +292,7 @@ class _HomeScreenState extends State<HomeScreen> {
           const Padding(
             padding: EdgeInsets.only(bottom: 16),
             child: Text(
-              "Malla Curricular v1.0",
+              "Malla Curricular v1.2",
               style: TextStyle(color: Colors.grey),
             ),
           ),
